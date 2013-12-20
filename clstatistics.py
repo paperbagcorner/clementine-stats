@@ -1,11 +1,10 @@
 #!/usr/bin/python2
 
 # This program print statistics of the Clementine music collection.
-import sys
-import sqlite3
+import argparse
 import datetime
 import dateutil.parser
-
+import sqlite3
 
 # The location of the database file.
 db_file = '/home/mattias/.config/Clementine/clementine.db'
@@ -22,6 +21,7 @@ class ClementineDb():
 
         # Create the connection
         self.connection = sqlite3.connect(filename)
+        self.connection.row_factory = sqlite3.Row
 
         # Create an empty dictionary. This dictionary will hold the
         # number of songs and artists and total play time.
@@ -32,6 +32,12 @@ class ClementineDb():
         # songs played before and after this time respectively.
         self.time_partition_dict = {}
 
+        # This list will contain a list of sqlite3 rows
+        # of the songs played in a certain time period.
+        self.songs_played = []
+
+        # This will contain a string representing a date.
+        self.date = None
 
     def __enter__(self):
         """ This function returns the object.
@@ -115,6 +121,7 @@ class ClementineDb():
         Parameter: split_date (integer) is a unix timestamp.
 
         """
+        cur = self.connection.cursor()
         if split_date != None:
             # Put the parameter into a 1-tuple so that it can be used in
             # the sql query.
@@ -148,7 +155,7 @@ class ClementineDb():
     def print_partitions(self):
         """
         Print the number of songs played before and after the
-        date vien in self.time_partition_dict.
+        date 'date' in self.time_partition_dict.
 
         """
         # Do nothing if time_partition_dict is empty.
@@ -156,31 +163,107 @@ class ClementineDb():
             return
 
         split_date_str = datetime.datetime.fromtimestamp(
-            float(self.time_partition_dict['date'])).strftime(
+            self.time_partition_dict['date']).strftime(
                 "%Y-%m-%d %H:%M")
         print "There are %d songs played before %s." % \
             (self.time_partition_dict['before'], split_date_str)
         print "There are %d songs played after %s." % \
             (self.time_partition_dict['after'], split_date_str)
 
+    def get_songs_played_on(self, date):
+        """Queries for a list of all songs that were played on the date
+        'date' and one day forward. The list is stored in the list
+        self.song_list.
 
-def get_timestamp_from_command_line(argv):
-    '''Reads the command line and converts the first argument that can be
+        """
+        # Make a tuple of the date and one day forward.
+        when = (date, date + 86400)
+
+        # Query the database.
+        cur = self.connection.cursor()
+        cur.execute(
+            "SELECT artist, title, "
+            "datetime(lastplayed, 'unixepoch', 'localtime') "
+            "AS 'last played' "
+            "FROM songs "
+            "WHERE lastplayed BETWEEN ? "
+            "AND ? "
+            "AND unavailable = 0 "
+            " ORDER BY lastplayed",
+            when
+        )
+        self.songs_played = cur.fetchall()
+
+        # Store the date as a string.
+        self.date = datetime.datetime.fromtimestamp(
+            date).strftime("%Y-%m-%d %H:%M")
+
+    def print_song_list(self):
+        """ Prints the list of songs in self.songs_played."""
+
+        # Print headers
+        print
+        print "{:<30} {:<30} {:<20}".format(
+            "artist", "title", "last played"
+        )
+        print "{0:-<30} {0:-<30} {0:-<20}".format("")
+        # Print list
+        for row in self.songs_played:
+            print u"{:<30} {:<30} {:<20}".format(
+                row["artist"][:30], row["title"][:30], row["last played"]
+            )
+        # Print total number of songs.
+        number_of_songs = len(self.songs_played)
+        print
+        print "The total number of songs played on {} is {}.".format(
+            self.date, number_of_songs
+        )
+
+
+def get_timestamp(args):
+    '''Reads the argument list and converts the first argument that can be
     interperted as a date or time into the unix timestamp format. This
     is then returned. If no valid argument is found, None is returned
-    instead. The function returns the timestamp as a 'str'.
+    instead.
     '''
-    for argument in argv:
+    for argument in args:
         try:
             dt_obj = dateutil.parser.parse(argument)
         except TypeError:
             pass
         else:
             time_posix = dt_obj.strftime('%s')
-            return time_posix
+            return int(time_posix) # Return as an integer.
 
 
 def main():
+    # Usage: No arguments give basic statistics. A datetime as an
+    # argument gives basic statistics and the number of songs played
+    # before and after the given date. The switch -o (--on) and a date
+    # gives a list of the songs played on that date.
+
+    # Parse the commandline.
+    parser = argparse.ArgumentParser(
+        description = "Print statistics of the clementine database.")
+    parser.add_argument(
+        '-o', '--on',
+        help='List all songs that were last played on the given date.',
+        action='store_true'
+    )
+    parser.add_argument(
+        'date',
+        nargs = '*',
+        help = 'A string that can be parsed as a date and/or time.'
+    )
+    args = parser.parse_args()
+
+    # If there is a command line argument that can be interpreted as a
+    # date, get the number of songs that has been played before (<)
+    # this date and the number of songs that has been played after
+    # (>=) this date.
+    date = get_timestamp(args.date)
+
+
     # Create the database connection.
     with ClementineDb(db_file) as conn:
 
@@ -190,19 +273,23 @@ def main():
         # Print the statiscs.
         conn.print_statistics()
 
-        # If there is a command line argument that can be interpreted as a
-        # date, get the number of songs that has been played before (<)
-        # this date and the number of songs that has been played after
-        # (>=) this date.
-        split_date = get_timestamp_from_command_line(sys.argv)
-        # split_date = 1385167257 # Debug value, remove this later.
+        # Print extra information if the user supplied a date on the
+        # command line.
+        if date != None:
+            # If the command line option '--on' was given, print a list of
+            # songs that were played on that day, if not print the number
+            # of songs that were played before and after the given date
+            # respectively.
+            if args.on:
+                conn.get_songs_played_on(date)
+                conn.print_song_list()
+            else:
+                # Split the number of songs in two, where the split point is
+                # given by split_date.
+                conn.partition_songs(date)
 
-        # Split the number of songs in two, where the split point is
-        # given by split_date.
-        conn.partition_songs(split_date)
-
-        # Print info on the number of songs played before and after
-        # the cutoff-date.
-        conn.print_partitions()
+                # Print info on the number of songs played before and after
+                # the cutoff-date.
+                conn.print_partitions()
 
 main()
