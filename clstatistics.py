@@ -150,8 +150,6 @@ class ClementineDb():
                 number_of_songs_played_after_date
             )
 
-            print self.time_partition_dict # Debug
-
     def print_partitions(self):
         """
         Print the number of songs played before and after the
@@ -215,7 +213,7 @@ class ClementineDb():
         # Print total number of songs.
         number_of_songs = len(self.songs_played)
         print
-        print "The total number of songs played on {} is {}.".format(
+        print "The total number of songs last played on {} is {}.".format(
             self.date, number_of_songs
         )
 
@@ -267,10 +265,8 @@ def main():
     # Create the database connection.
     with ClementineDb(db_file) as conn:
 
-        # Load the statics from the database.
+        # Load the statics from the database and print it.
         conn.get_statistics()
-
-        # Print the statiscs.
         conn.print_statistics()
 
         # Print extra information if the user supplied a date on the
@@ -284,12 +280,10 @@ def main():
                 conn.get_songs_played_on(date)
                 conn.print_song_list()
             else:
-                # Split the number of songs in two, where the split point is
-                # given by split_date.
+                # Split the number of songs in two, where the split
+                # point is given by split_date and print the number of
+                # songs in each partition.
                 conn.partition_songs(date)
-
-                # Print info on the number of songs played before and after
-                # the cutoff-date.
                 conn.print_partitions()
 
 main()
