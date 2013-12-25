@@ -245,13 +245,15 @@ def main():
         description = "Print statistics of the clementine database.")
     parser.add_argument(
         '-o', '--on',
+        nargs = 1,
         help='List all songs that were last played on the given date.',
-        action='store_true'
+        action = 'store_true'
     )
     parser.add_argument(
-        'date',
-        nargs = '*',
-        help = 'A string that can be parsed as a date and/or time.'
+        '-s', '--split',
+        help = ('List how many songs that has been played before '
+                'and after the given date.'),
+        action = 'store_true'
     )
     args = parser.parse_args()
 
