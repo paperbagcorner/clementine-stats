@@ -250,6 +250,7 @@ def main():
         '-o', '--on',
         nargs = 1,
         help='List all songs that were last played on the given date.',
+        metavar = 'DATE',
         action = 'store'
     )
     parser.add_argument(
@@ -257,6 +258,7 @@ def main():
         nargs = 1,
         help = ('List how many songs that has been played before '
                 'and after the given date.'),
+        metavar = 'DATE',
         action = 'store'
     )
     args = parser.parse_args()
