@@ -7,7 +7,7 @@ import dateutil.parser
 import sqlite3
 
 # The location of the database file.
-db_file = '/home/mattias/.config/Clementine/clementine.db'
+DB_FILE = '/home/mattias/.config/Clementine/clementine.db'
 
 class ClementineDb():
     """This class opens and closes the clementine database and implements
@@ -223,11 +223,14 @@ def get_timestamp(args):
     interperted as a date or time into the unix timestamp format. This
     is then returned. If no valid argument is found, None is returned
     instead.
+
+    TODO: The command line switches are changed so that they now only
+    support one argument. We can probably enable fuzzy matching now.
     '''
     for argument in args:
         try:
             dt_obj = dateutil.parser.parse(argument)
-        except TypeError:
+        except (TypeError, ValueError):
             pass
         else:
             time_posix = dt_obj.strftime('%s')
@@ -247,44 +250,40 @@ def main():
         '-o', '--on',
         nargs = 1,
         help='List all songs that were last played on the given date.',
-        action = 'store_true'
+        action = 'store'
     )
     parser.add_argument(
         '-s', '--split',
+        nargs = 1,
         help = ('List how many songs that has been played before '
                 'and after the given date.'),
-        action = 'store_true'
+        action = 'store'
     )
     args = parser.parse_args()
 
-    # If there is a command line argument that can be interpreted as a
-    # date, get the number of songs that has been played before (<)
-    # this date and the number of songs that has been played after
-    # (>=) this date.
-    date = get_timestamp(args.date)
-
-
     # Create the database connection.
-    with ClementineDb(db_file) as conn:
+    with ClementineDb(DB_FILE) as conn:
 
         # Load the statics from the database and print it.
         conn.get_statistics()
         conn.print_statistics()
 
-        # Print extra information if the user supplied a date on the
-        # command line.
-        if date != None:
-            # If the command line option '--on' was given, print a list of
-            # songs that were played on that day, if not print the number
-            # of songs that were played before and after the given date
-            # respectively.
-            if args.on:
+        # If the command line option '--on' was given, print a list of
+        # songs that were played on that day, if not print the number
+        # of songs that were played before and after the given date
+        # respectively.
+        if args.on:
+            date = get_timestamp(args.on)
+            if date != None: # Do nothing on an invalid date.
                 conn.get_songs_played_on(date)
                 conn.print_song_list()
-            else:
-                # Split the number of songs in two, where the split
-                # point is given by split_date and print the number of
-                # songs in each partition.
+
+        # If the command line option '--split' was given, print the
+        # number of songs that were played before and after the
+        # supplied date.
+        if args.split:
+            date = get_timestamp(args.split)
+            if date != None: # Do nothing on an invalid date.
                 conn.partition_songs(date)
                 conn.print_partitions()
 
