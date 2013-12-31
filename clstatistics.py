@@ -85,14 +85,19 @@ class ClementineDb():
 		microseconds=total_time_in_microseconds))
 
 	# Get the title, artist and timestamp of the last played song.
-	cur.execute("SELECT title, artist, max(lastplayed) from songs "
-		    "WHERE unavailable = 0")
+	cur.execute("SELECT artist, title, lastplayed "
+		    "FROM songs "
+		    " WHERE unavailable = 0 "
+		    "ORDER BY lastplayed DESC "
+		    "LIMIT 1")
 	last_played_song = cur.fetchone()
-	self.statistics_dict['last_played_title'] = last_played_song[0]
-	self.statistics_dict['last_played_artist'] = last_played_song[1]
+	self.statistics_dict['last_played_title'] = \
+	    last_played_song['title']
+	self.statistics_dict['last_played_artist'] = \
+	    last_played_song['artist']
 	self.statistics_dict['last_played_time'] = \
 	    datetime.datetime.fromtimestamp(
-		last_played_song[2]).strftime("%Y-%m-%d %H:%M")
+		last_played_song['lastplayed']).strftime("%Y-%m-%d %H:%M")
 
 	# Debug row. It prints the dictionary.
 	# print self.statistics_dict
