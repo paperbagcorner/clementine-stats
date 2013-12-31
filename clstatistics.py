@@ -192,7 +192,7 @@ class ClementineDb():
 	    "WHERE lastplayed BETWEEN ? "
 	    "AND ? "
 	    "AND unavailable = 0 "
-	    " ORDER BY lastplayed",
+	    "ORDER BY lastplayed",
 	    when
 	)
 	self.songs_played = cur.fetchall()
