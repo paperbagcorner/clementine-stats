@@ -36,7 +36,7 @@ class ClementineDb():
 	# of the songs played in a certain time period.
 	self.songs_played = []
 
-	# This will contain a string representing a date.
+	# This will contain a tuple of strings representing dates.
 	self.date = None
 
     def __enter__(self):
@@ -173,14 +173,14 @@ class ClementineDb():
 	print "There are %d songs played after %s." % \
 	    (self.time_partition_dict['after'], split_date_str)
 
-    def get_songs_played_on(self, date):
-	"""Queries for a list of all songs that were played on the date
-	'date' and one day forward. The list is stored in the list
-	self.song_list.
+    def get_songs_played_on_interval(self, when):
+	"""Queries for a list of all songs that were played on the
+	date interval given in the tuple when in a unix timestamp
+	format. The list is stored in the list self.song_list.
 
 	"""
 	# Make a tuple of the date and one day forward.
-	when = (date, date + 86400)
+	# when = (date, date + 86400)
 
 	# Query the database.
 	cur = self.connection.cursor()
@@ -197,9 +197,13 @@ class ClementineDb():
 	)
 	self.songs_played = cur.fetchall()
 
-	# Store the date as a string.
-	self.date = datetime.datetime.fromtimestamp(
-	    date).strftime("%Y-%m-%d %H:%M")
+	# Store the dates as a string.
+	self.date = (
+	    datetime.datetime.fromtimestamp(
+		when[0]).strftime("%Y-%m-%d %H:%M"),
+	    datetime.datetime.fromtimestamp(
+		when[1]).strftime("%Y-%m-%d %H:%M")
+	)
 
     def print_song_list(self):
 	""" Prints the list of songs in self.songs_played."""
@@ -218,10 +222,8 @@ class ClementineDb():
 	# Print total number of songs.
 	number_of_songs = len(self.songs_played)
 	print
-	print "The total number of songs last played on {} is {}.".format(
-	    self.date, number_of_songs
-	)
-
+	print "The total number of songs last between {} and {} is {}."\
+	    .format(self.date[0], self.date[1], number_of_songs)
 
 def get_timestamp(args):
     '''Reads the argument list and converts the first argument that can be
@@ -245,19 +247,13 @@ def get_timestamp(args):
 def main():
     # Usage: No arguments give basic statistics. A datetime as an
     # argument gives basic statistics and the number of songs played
-    # before and after the given date. The switch -o (--on) and a date
-    # gives a list of the songs played on that date.
+    # before and after the given date. The switches -f (--from) and -t
+    # (--to) DATE gives a list of the songs played on the date
+    # interval given.
 
     # Parse the commandline.
     parser = argparse.ArgumentParser(
 	description = "Print statistics of the clementine database.")
-    parser.add_argument(
-	'-o', '--on',
-	nargs = 1,
-	help='List all songs that were last played on the given date.',
-	metavar = 'DATE',
-	action = 'store'
-    )
     parser.add_argument(
 	'-s', '--split',
 	nargs = 1,
@@ -266,7 +262,31 @@ def main():
 	metavar = 'DATE',
 	action = 'store'
     )
+    list_group = parser.add_argument_group(
+	'List songs',
+	'Print the songs played between the --from date and the --to date. '
+	'If only one of the arguments is given, print either the interval '
+	'[--from, --from + 1 day] or [--to - 1 day, --to].'
+	)
+    list_group.add_argument(
+	'-f', '--from',
+	nargs = 1,
+	help='Start date',
+	metavar = 'DATE',
+	action = 'store',
+	dest = 'from_' # This is needed because 'from' is a python keyword.
+    )
+    list_group.add_argument(
+	'-t', '--to',
+	nargs = 1,
+	help='End date',
+	metavar = 'DATE',
+	action = 'store',
+    )
+
     args = parser.parse_args()
+
+    print args
 
     # Create the database connection.
     with ClementineDb(DB_FILE) as conn:
@@ -275,14 +295,29 @@ def main():
 	conn.get_statistics()
 	conn.print_statistics()
 
-	# If the command line option '--on' was given, print a list of
-	# songs that were played on that day, if not print the number
-	# of songs that were played before and after the given date
-	# respectively.
-	if args.on:
-	    date = get_timestamp(args.on)
-	    if date != None: # Do nothing on an invalid date.
-		conn.get_songs_played_on(date)
+	# If the command line options '--from' and/or '--to' is given,
+	# print a list of songs that were played in the interval
+	# --from - --to. If one of the arguments is missing, print the
+	# interval --from - --from + 1 day och --to - 1 day - --to.
+	if args.from_:
+	    start_date = get_timestamp(args.from_)
+	    if start_date != None: # Do nothing on an invalid date.
+		if args.to:
+		    end_date = get_timestamp(args.to)
+		else:
+		    end_date = start_date + 86400 # +1 day
+		if end_date != None: # Do nothing on an invalid date.
+		    when = (start_date, end_date)
+		    conn.get_songs_played_on_interval(when)
+		    conn.print_song_list()
+	elif args.to:
+	    # Only the end date has been given. Print the interval
+	    # [end date - 1 day, end date].
+	    end_date = get_timestamp(args.to)
+	    if end_date != None: # Do nothing on an invalid date.
+		start_date = end_date - 86400 # -1 day
+		when = (start_date, end_date)
+		conn.get_songs_played_on_interval(when)
 		conn.print_song_list()
 
 	# If the command line option '--split' was given, print the
