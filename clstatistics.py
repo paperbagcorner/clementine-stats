@@ -4,6 +4,7 @@
 import argparse
 import datetime
 import dateutil.parser
+import dbus
 import sqlite3
 
 # The location of the database file.
@@ -38,6 +39,14 @@ class ClementineDb():
 
 	# This will contain a tuple of strings representing dates.
 	self.date = None
+
+        # Set up a dbus interface for the player object
+        session_bus = dbus.SessionBus()
+        player = session_bus.get_object('org.mpris.clementine', '/Player')
+        self.player_iface = dbus.Interface(
+            player,
+            dbus_interface='org.freedesktop.MediaPlayer'
+        )
 
     def __enter__(self):
 	""" This function returns the object.
@@ -74,7 +83,7 @@ class ClementineDb():
 		    "WHERE unavailable=0")
 	self.statistics_dict['number_of_artists'] = cur.fetchone()[0]
 
-	# Get the total play time
+        # Get the total play time
 	cur.execute("SELECT Total(length) FROM songs WHERE unavailable=0")
 	total_time_in_nanoseconds = cur.fetchone()[0]
 	# Convert the result to microseconds and turn it into a
@@ -225,6 +234,13 @@ class ClementineDb():
 	print "The total number of songs last between {} and {} is {}."\
 	    .format(self.date[0], self.date[1], number_of_songs)
 
+
+    def print_dbus(self):
+        """ This function is used to test dbus for now. """
+        metadata = self.player_iface.GetMetadata()
+        for key, value in metadata.iteritems():
+            print "{}: {}".format(key,value)
+
 def get_timestamp(args):
     '''Reads the argument list and converts the first argument that can be
     interperted as a date or time into the unix timestamp format. This
@@ -271,7 +287,7 @@ def main():
     list_group.add_argument(
 	'-f', '--from',
 	nargs = 1,
-	help='Start date',
+	help = 'Start date',
 	metavar = 'DATE',
 	action = 'store',
 	dest = 'from_' # This is needed because 'from' is a python keyword.
@@ -279,14 +295,17 @@ def main():
     list_group.add_argument(
 	'-t', '--to',
 	nargs = 1,
-	help='End date',
+	help = 'End date',
 	metavar = 'DATE',
 	action = 'store',
     )
+    parser.add_argument(
+        '--test',
+        action = 'store_true',
+        help = 'Run internal testing code.'
+    )
 
     args = parser.parse_args()
-
-    print args
 
     # Create the database connection.
     with ClementineDb(DB_FILE) as conn:
@@ -329,4 +348,10 @@ def main():
 		conn.partition_songs(date)
 		conn.print_partitions()
 
-main()
+        # Run tests if the appropriate command line option is given.
+        if args.test:
+            conn.print_dbus()
+
+# Run the program. (Use C-u C-c C-c to run main from within emacs.)
+if __name__ == '__main__':
+    main()
