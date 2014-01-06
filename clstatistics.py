@@ -83,7 +83,12 @@ class ClementineDb():
 		    "WHERE unavailable=0")
 	self.statistics_dict['number_of_artists'] = cur.fetchone()[0]
 
-        # Get the total play time
+        # Get the number of genres.
+        cur.execute("SELECT Count(DISTINCT genre) FROM songs "
+                    "WHERE unavailable=0")
+        self.statistics_dict['number_of_genres'] = cur.fetchone()[0]
+
+        # Get the total play time.
 	cur.execute("SELECT Total(length) FROM songs WHERE unavailable=0")
 	total_time_in_nanoseconds = cur.fetchone()[0]
 	# Convert the result to microseconds and turn it into a
@@ -109,16 +114,18 @@ class ClementineDb():
 		last_played_song['lastplayed']).strftime("%Y-%m-%d %H:%M")
 
 	# Debug row. It prints the dictionary.
-	# print self.statistics_dict
+        # print self.statistics_dict
 
     def print_statistics(self):
 	""" This function prints the statistics gathered to the shell.
 	"""
-	print "%d songs on %d albums by %d different artists." % \
+	print ("%d songs on %d albums by %d different artists "
+            "spread on %d genres." %
 	    (self.statistics_dict['number_of_songs'],
 	     self.statistics_dict['number_of_albums'],
-	     self.statistics_dict['number_of_artists']
-	    )
+	     self.statistics_dict['number_of_artists'],
+             self.statistics_dict['number_of_genres']
+	    ))
 	print "The total play time of the collection is %s." % \
 	    (self.statistics_dict['total_play_time_str'])
 	print "The last song played was %s by %s at %s." % \
