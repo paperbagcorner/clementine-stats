@@ -41,12 +41,15 @@ class ClementineDb():
 	self.date = None
 
         # Set up a dbus interface for the player object
-        session_bus = dbus.SessionBus()
-        player = session_bus.get_object('org.mpris.clementine', '/Player')
-        self.player_iface = dbus.Interface(
-            player,
-            dbus_interface='org.freedesktop.MediaPlayer'
-        )
+        try:
+            session_bus = dbus.SessionBus()
+            player = session_bus.get_object('org.mpris.clementine', '/Player')
+            self.player_iface = dbus.Interface(
+                player,
+                dbus_interface='org.freedesktop.MediaPlayer'
+            )
+        except dbus.DBusException:
+            print "WARNING: Could not set up dbus interface."
 
     def __enter__(self):
 	""" This function returns the object.
