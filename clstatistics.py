@@ -1,6 +1,9 @@
 #!/usr/bin/python2
 
 # This program print statistics of the Clementine music collection.
+# Make sure that you set the environment variable
+# PYTHONIOENCODING=utf-8 if you are going to pipe the output.
+
 import argparse
 import datetime
 import dateutil.parser
