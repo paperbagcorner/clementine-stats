@@ -244,7 +244,7 @@ class ClementineDb():
 	# Print total number of songs.
 	number_of_songs = len(self.songs_played)
 	print
-	print "The total number of songs last between {} and {} is {}."\
+	print "The total number of songs played between {} and {} is {}."\
 	    .format(self.date[0], self.date[1], number_of_songs)
 
 
