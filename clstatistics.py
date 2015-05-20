@@ -9,6 +9,7 @@ import datetime
 import dateutil.parser
 import dbus
 import sqlite3
+import textwrap
 
 # The location of the database file.
 DB_FILE = '/home/mattias/.config/Clementine/clementine.db'
@@ -201,15 +202,14 @@ class ClementineDb():
 	format. The list is stored in the list self.song_list.
 
 	"""
-	# Make a tuple of the date and one day forward.
-	# when = (date, date + 86400)
 
 	# Query the database.
 	cur = self.connection.cursor()
 	cur.execute(
 	    "SELECT artist, title, "
 	    "datetime(lastplayed, 'unixepoch', 'localtime') "
-	    "AS 'last played' "
+	    "AS 'last played', "
+            "length "
 	    "FROM songs "
 	    "WHERE lastplayed BETWEEN ? "
 	    "AND ? "
@@ -227,30 +227,20 @@ class ClementineDb():
                 when[1]).strftime("%Y-%m-%d %H:%M")
         )
 
-    def compute_total_play_time_on_interval(self, when):
+    def compute_total_play_time_of_songs_played(self):
         """Queries the database and computes the total play time for all songs
-        that were played in the given time interval. The result is
-        stored as a human readable string.
+        that has been read into self.songs_played. The result is
+        returned as a human readable string.
 
         """
 
-        import pdb; pdb.set_trace()
-        cur = self.connection.cursor()
-        cur.execute(
-            "SELECT Total(length) "
-            "FROM songs "
-            "WHERE lastplayed BETWEEN ? "
-            "AND ?",
-            when
-        )
-        # Get the total play time for the interval, convert it to
-        # microseconds and turn it into a human readable string.
-        play_time_nsec = cur.fetchone()[0]
+        # Sum the length of all tracks, convert it into microseconds
+        # and turn it into a human readable format.
+        play_time_nsec = sum(row["length"] for row in self.songs_played)
         play_time_usec = play_time_nsec / 1000
         play_time_str = str(datetime.timedelta(microseconds=play_time_usec))
 
-
-        print "Total play time for the interval FILL ME IN: ", play_time_str
+        return play_time_str
 
     def print_song_list(self):
         """ Prints the list of songs in self.songs_played."""
@@ -268,10 +258,12 @@ class ClementineDb():
             )
         # Print total number of songs.
         number_of_songs = len(self.songs_played)
+        play_time_str = self.compute_total_play_time_of_songs_played()
         print
-        print "The total number of songs played between {} and {} is {}."\
-            .format(self.date[0], self.date[1], number_of_songs)
-
+        print textwrap.fill(
+            "The total number of songs played between {} and {} is {}, "
+            "with a total play time of {}."
+            .format(self.date[0], self.date[1], number_of_songs, play_time_str))
 
     def print_dbus(self):
         """ This function is used to test dbus for now. """
@@ -390,12 +382,7 @@ def main():
         if args.test:
             # conn.print_dbus()
 
-            if not args.from_:
-                return
-            start_date = get_timestamp(args.from_)
-            end_date = start_date + 86400 # 1 day
-            when = (start_date, end_date)
-            conn.compute_total_play_time_on_interval(when)
+            conn.compute_total_play_time_of_songs_played()
 
 # Run the program. (Use C-u C-c C-c to run main from within emacs.)
 if __name__ == '__main__':
