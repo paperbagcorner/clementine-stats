@@ -223,29 +223,54 @@ class ClementineDb():
 	self.date = (
 	    datetime.datetime.fromtimestamp(
 		when[0]).strftime("%Y-%m-%d %H:%M"),
-	    datetime.datetime.fromtimestamp(
-		when[1]).strftime("%Y-%m-%d %H:%M")
-	)
+            datetime.datetime.fromtimestamp(
+                when[1]).strftime("%Y-%m-%d %H:%M")
+        )
+
+    def compute_total_play_time_on_interval(self, when):
+        """Queries the database and computes the total play time for all songs
+        that were played in the given time interval. The result is
+        stored as a human readable string.
+
+        """
+
+        import pdb; pdb.set_trace()
+        cur = self.connection.cursor()
+        cur.execute(
+            "SELECT Total(length) "
+            "FROM songs "
+            "WHERE lastplayed BETWEEN ? "
+            "AND ?",
+            when
+        )
+        # Get the total play time for the interval, convert it to
+        # microseconds and turn it into a human readable string.
+        play_time_nsec = cur.fetchone()[0]
+        play_time_usec = play_time_nsec / 1000
+        play_time_str = str(datetime.timedelta(microseconds=play_time_usec))
+
+
+        print "Total play time for the interval FILL ME IN: ", play_time_str
 
     def print_song_list(self):
-	""" Prints the list of songs in self.songs_played."""
+        """ Prints the list of songs in self.songs_played."""
 
-	# Print headers
-	print
-	print "{:<30} {:<30} {:<20}".format(
-	    "artist", "title", "last played"
-	)
-	print "{0:-<30} {0:-<30} {0:-<20}".format("")
-	# Print list
-	for row in self.songs_played:
-	    print u"{:<30} {:<30} {:<20}".format(
-		row["artist"][:30], row["title"][:30], row["last played"]
-	    )
-	# Print total number of songs.
-	number_of_songs = len(self.songs_played)
-	print
-	print "The total number of songs played between {} and {} is {}."\
-	    .format(self.date[0], self.date[1], number_of_songs)
+        # Print headers
+        print
+        print "{:<30} {:<30} {:<20}".format(
+            "artist", "title", "last played"
+        )
+        print "{0:-<30} {0:-<30} {0:-<20}".format("")
+        # Print list
+        for row in self.songs_played:
+            print u"{:<30} {:<30} {:<20}".format(
+                row["artist"][:30], row["title"][:30], row["last played"]
+            )
+        # Print total number of songs.
+        number_of_songs = len(self.songs_played)
+        print
+        print "The total number of songs played between {} and {} is {}."\
+            .format(self.date[0], self.date[1], number_of_songs)
 
 
     def print_dbus(self):
@@ -264,13 +289,13 @@ def get_timestamp(args):
     support one argument. We can probably enable fuzzy matching now.
     '''
     for argument in args:
-	try:
-	    dt_obj = dateutil.parser.parse(argument)
-	except (TypeError, ValueError):
-	    pass
-	else:
-	    time_posix = dt_obj.strftime('%s')
-	    return int(time_posix) # Return as an integer.
+        try:
+            dt_obj = dateutil.parser.parse(argument)
+        except (TypeError, ValueError):
+            pass
+        else:
+            time_posix = dt_obj.strftime('%s')
+            return int(time_posix) # Return as an integer.
 
 
 def main():
@@ -282,35 +307,35 @@ def main():
 
     # Parse the commandline.
     parser = argparse.ArgumentParser(
-	description = "Print statistics of the clementine database.")
+        description = "Print statistics of the clementine database.")
     parser.add_argument(
-	'-s', '--split',
-	nargs = 1,
-	help = ('List how many songs that has been played before '
-		'and after the given date.'),
-	metavar = 'DATE',
-	action = 'store'
+        '-s', '--split',
+        nargs = 1,
+        help = ('List how many songs that has been played before '
+                'and after the given date.'),
+        metavar = 'DATE',
+        action = 'store'
     )
     list_group = parser.add_argument_group(
-	'List songs',
-	'Print the songs played between the --from date and the --to date. '
-	'If only one of the arguments is given, print either the interval '
-	'[--from, --from + 1 day] or [--to - 1 day, --to].'
-	)
+        'List songs',
+        'Print the songs played between the --from date and the --to date. '
+        'If only one of the arguments is given, print either the interval '
+        '[--from, --from + 1 day] or [--to - 1 day, --to].'
+        )
     list_group.add_argument(
-	'-f', '--from',
-	nargs = 1,
-	help = 'Start date',
-	metavar = 'DATE',
-	action = 'store',
-	dest = 'from_' # This is needed because 'from' is a python keyword.
+        '-f', '--from',
+        nargs = 1,
+        help = 'Start date',
+        metavar = 'DATE',
+        action = 'store',
+        dest = 'from_' # This is needed because 'from' is a python keyword.
     )
     list_group.add_argument(
-	'-t', '--to',
-	nargs = 1,
-	help = 'End date',
-	metavar = 'DATE',
-	action = 'store',
+        '-t', '--to',
+        nargs = 1,
+        help = 'End date',
+        metavar = 'DATE',
+        action = 'store',
     )
     parser.add_argument(
         '--test',
@@ -323,47 +348,54 @@ def main():
     # Create the database connection.
     with ClementineDb(DB_FILE) as conn:
 
-	# Load the statics from the database and print it.
-	conn.get_statistics()
-	conn.print_statistics()
+        # Load the statics from the database and print it.
+        conn.get_statistics()
+        conn.print_statistics()
 
-	# If the command line options '--from' and/or '--to' is given,
-	# print a list of songs that were played in the interval
-	# --from - --to. If one of the arguments is missing, print the
-	# interval --from - --from + 1 day och --to - 1 day - --to.
-	if args.from_:
-	    start_date = get_timestamp(args.from_)
-	    if start_date != None: # Do nothing on an invalid date.
-		if args.to:
-		    end_date = get_timestamp(args.to)
-		else:
-		    end_date = start_date + 86400 # +1 day
-		if end_date != None: # Do nothing on an invalid date.
-		    when = (start_date, end_date)
-		    conn.get_songs_played_on_interval(when)
-		    conn.print_song_list()
-	elif args.to:
-	    # Only the end date has been given. Print the interval
-	    # [end date - 1 day, end date].
-	    end_date = get_timestamp(args.to)
-	    if end_date != None: # Do nothing on an invalid date.
-		start_date = end_date - 86400 # -1 day
-		when = (start_date, end_date)
-		conn.get_songs_played_on_interval(when)
-		conn.print_song_list()
+        # If the command line options '--from' and/or '--to' is given,
+        # print a list of songs that were played in the interval
+        # --from - --to. If one of the arguments is missing, print the
+        # interval --from - --from + 1 day och --to - 1 day - --to.
+        if args.from_:
+            start_date = get_timestamp(args.from_)
+            if start_date != None: # Do nothing on an invalid date.
+                if args.to:
+                    end_date = get_timestamp(args.to)
+                else:
+                    end_date = start_date + 86400 # +1 day
+                if end_date != None: # Do nothing on an invalid date.
+                    when = (start_date, end_date)
+                    conn.get_songs_played_on_interval(when)
+                    conn.print_song_list()
+        elif args.to:
+            # Only the end date has been given. Print the interval
+            # [end date - 1 day, end date].
+            end_date = get_timestamp(args.to)
+            if end_date != None: # Do nothing on an invalid date.
+                start_date = end_date - 86400 # -1 day
+                when = (start_date, end_date)
+                conn.get_songs_played_on_interval(when)
+                conn.print_song_list()
 
-	# If the command line option '--split' was given, print the
-	# number of songs that were played before and after the
-	# supplied date.
-	if args.split:
-	    date = get_timestamp(args.split)
-	    if date != None: # Do nothing on an invalid date.
-		conn.partition_songs(date)
-		conn.print_partitions()
+        # If the command line option '--split' was given, print the
+        # number of songs that were played before and after the
+        # supplied date.
+        if args.split:
+            date = get_timestamp(args.split)
+            if date != None: # Do nothing on an invalid date.
+                conn.partition_songs(date)
+                conn.print_partitions()
 
         # Run tests if the appropriate command line option is given.
         if args.test:
-            conn.print_dbus()
+            # conn.print_dbus()
+
+            if not args.from_:
+                return
+            start_date = get_timestamp(args.from_)
+            end_date = start_date + 86400 # 1 day
+            when = (start_date, end_date)
+            conn.compute_total_play_time_on_interval(when)
 
 # Run the program. (Use C-u C-c C-c to run main from within emacs.)
 if __name__ == '__main__':
