@@ -9,7 +9,6 @@ import datetime
 import dateutil.parser
 import dbus
 import sqlite3
-import textwrap
 
 # The location of the database file.
 DB_FILE = '/home/mattias/.config/Clementine/clementine.db'
@@ -260,10 +259,10 @@ class ClementineDb():
         number_of_songs = len(self.songs_played)
         play_time_str = self.compute_total_play_time_of_songs_played()
         print
-        print textwrap.fill(
-            "The total number of songs played between {} and {} is {}, "
-            "with a total play time of {}."
-            .format(self.date[0], self.date[1], number_of_songs, play_time_str))
+        print "{} songs played between {} and {}."\
+            .format(number_of_songs, self.date[0], self.date[1])
+        print "The total play time is {}.".format(play_time_str)
+
 
     def print_dbus(self):
         """ This function is used to test dbus for now. """
