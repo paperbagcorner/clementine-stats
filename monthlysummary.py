@@ -42,7 +42,6 @@ def GetDataFromDb(filename):
                     "ORDER BY lastplayed")
 
         stats = cur.fetchall()
-    # conn.close()
 
     return stats
 
