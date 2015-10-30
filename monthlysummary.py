@@ -70,14 +70,14 @@ def BuildResultList(stats):
         row = {}
         month_str = datetime.strftime(month, '%Y-%m')
         if stats[i]['month'] == month_str:
-            row['month'] = stats[i]['month']
-            row['num_songs'] = stats[i]['num_songs']
-            row['length_sec'] = stats[i]['length_secs']
+            # Convert the sqlrow to a dict. Idea from
+            # http://stackoverflow.com/questions/3300464/how-can-i-get-dict-from-sqlite-query#comment49616300_9538363
+            row = dict(stats[i])
             i += 1
         else:
             row['month'] = month_str
             row['num_songs'] = 0
-            row['length_sec'] = 0
+            row['length_secs'] = 0
         month_list.append(row)
 
         month = month + relativedelta(months=+1)
@@ -94,7 +94,7 @@ def PrintResultList(a_list):
 
     Args:
       a_list: A list of dictionaries which has the keys month, num_songs
-              and length_sec.
+              and length_secs.
     Returns:
       None
     '''
@@ -102,7 +102,7 @@ def PrintResultList(a_list):
         print('{:>4} songs last played in {}. Total length: {}'.format(
             row['num_songs'],
             row['month'],
-            timedelta(seconds=row['length_sec'])))
+            timedelta(seconds=row['length_secs'])))
 
 def main():
     stats = GetDataFromDb(DB_FILE)
