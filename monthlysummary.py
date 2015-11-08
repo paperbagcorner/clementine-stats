@@ -83,10 +83,6 @@ def BuildResultList(stats):
 
     return month_list
 
-    # for stat in stats:
-    #     months[stat['month']] = stat['num_songs']
-    # return months
-
 def PrintResultList(a_list):
     '''
     Prints a nicely formatted list of the result.
