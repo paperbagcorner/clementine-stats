@@ -1,8 +1,7 @@
 #!/usr/bin/python
 
 # This script queries the clementine database and print how many songs
-# which have been played each month. It's a more efficient alternative to
-# for i in {0..32}; do month=$(playedinmonth $(date --date "2013-02-01 + $i month" +'%Y-%m')); printf "%64s\n" "$month"; done
+# which have been played each month.
 
 
 import os
@@ -11,7 +10,7 @@ import sqlite3
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 
-# The location of the database file.
+# Default location of the database file.
 DB_FILE = os.path.join(os.environ['HOME'], '.config/Clementine/clementine.db')
 
 
@@ -49,7 +48,7 @@ def BuildResultList(stats):
     '''
     Constructs a list of dictionaries from the sqlrows returned by
     GetDataFromDb and adds entries for those months for which there was no
-    last played songs.
+    played songs.
 
     Args:
       stats: A list of sqlrows.
