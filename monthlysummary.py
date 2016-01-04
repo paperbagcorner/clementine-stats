@@ -68,9 +68,7 @@ def BuildResultList(stats):
         row = {}
         month_str = datetime.strftime(month, '%Y-%m')
         if stats[i]['month'] == month_str:
-            # Convert the sqlrow to a dict. Idea from
-            # http://stackoverflow.com/questions/3300464/how-can-i-get-dict-from-sqlite-query#comment49616300_9538363
-            row = dict(stats[i])
+            row = dict(stats[i]) # Since stats[i] is a sqlrow.
             i += 1
         else:
             row['month'] = month_str
