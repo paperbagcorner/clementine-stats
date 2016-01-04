@@ -22,14 +22,13 @@ class ClementineDb():
     def __init__(self, filename):
         """Connects to the database specified by the parameter 'filename'.
         """
-        #print 'ClementineDb::__init__'
 
         # Create the connection
         self.connection = sqlite3.connect(filename)
         self.connection.row_factory = sqlite3.Row
 
-        # Create an empty dictionary. This dictionary will hold the
-        # number of songs and artists and total play time.
+        # This dictionary will hold the number of songs and artists
+        # and total play time.
         self.statistics_dict = {}
 
         # This dictionary will contain the elements 'date', 'before',
@@ -58,20 +57,17 @@ class ClementineDb():
     def __enter__(self):
         """ This function returns the object.
         """
-        #print 'ClementineDb::__enter__'
         return self
 
     def __exit__(self,exception_type, exception_val, trace):
         """ Closes the database connection.
         """
-        #print 'ClementineDb::__exit__'
-        # Close the connection if it was created.
         if self.connection:
             self.connection.close()
 
 
     def get_statistics(self):
-        """This function queries the database for the number of songs,
+        """Queries the database for the number of songs,
         number of albums, total play time and last played song.
         """
         cur = self.connection.cursor()
@@ -119,9 +115,6 @@ class ClementineDb():
         self.statistics_dict['last_played_time'] = \
             datetime.datetime.fromtimestamp(
                 last_played_song['lastplayed']).strftime("%Y-%m-%d %H:%M")
-
-        # Debug row. It prints the dictionary.
-        # print self.statistics_dict
 
     def print_statistics(self):
         """ This function prints the statistics gathered to the shell.
@@ -184,7 +177,7 @@ class ClementineDb():
         date 'date' in self.time_partition_dict.
 
         """
-        # Do nothing if time_partition_dict is empty.
+
         if not self.time_partition_dict:
             return
 
