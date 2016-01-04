@@ -1,8 +1,6 @@
-#!/usr/bin/python2
+#!/usr/bin/python3
 
 # This program print statistics of the Clementine music collection.
-# Make sure that you set the environment variable
-# PYTHONIOENCODING=utf-8 if you are going to pipe the output.
 
 import argparse
 import datetime
@@ -10,7 +8,8 @@ import dateutil.parser
 import os
 import sqlite3
 
-# This is the default location of the database file on linux systems.
+# This is the default location of the database file on linux
+# systems. Change it if needed.
 DB_FILE = os.path.join(os.environ['HOME'], '.config/Clementine/clementine.db')
 
 class ClementineDb():
