@@ -80,13 +80,13 @@ class ClementineDb():
 
         # Get the total play time.
         cur.execute("SELECT Total(length) FROM songs WHERE unavailable=0")
-        total_time_in_nanoseconds = cur.fetchone()[0]
+        total_time_in_nsecs = cur.fetchone()[0]
         # Convert the result to microseconds and turn it into a
         # human-readable string.
-        total_time_in_microseconds = total_time_in_nanoseconds / 1000
+        total_time_in_usecs = total_time_in_nsecs / 1000
         self.statistics_dict['total_play_time_str'] = \
                 str(datetime.timedelta(
-                microseconds=total_time_in_microseconds))
+                microseconds=total_time_in_usecs))
 
         # Get the title, artist and timestamp of the last played song.
         cur.execute("SELECT artist, title, lastplayed "
