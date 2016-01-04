@@ -8,10 +8,11 @@ import argparse
 import datetime
 import dateutil.parser
 import dbus
+import os
 import sqlite3
 
-# The location of the database file.
-DB_FILE = '/home/mattias/.config/Clementine/clementine.db'
+# This is the default location of the database file on linux systems.
+DB_FILE = os.path.join(os.environ['HOME'], '.config/Clementine/clementine.db')
 
 class ClementineDb():
     """This class opens and closes the clementine database and implements
@@ -19,29 +20,29 @@ class ClementineDb():
     """
 
     def __init__(self, filename):
-	"""Connects to the database specified by the parameter 'filename'.
-	"""
-	#print 'ClementineDb::__init__'
+        """Connects to the database specified by the parameter 'filename'.
+        """
+        #print 'ClementineDb::__init__'
 
-	# Create the connection
-	self.connection = sqlite3.connect(filename)
-	self.connection.row_factory = sqlite3.Row
+        # Create the connection
+        self.connection = sqlite3.connect(filename)
+        self.connection.row_factory = sqlite3.Row
 
-	# Create an empty dictionary. This dictionary will hold the
-	# number of songs and artists and total play time.
-	self.statistics_dict = {}
+        # Create an empty dictionary. This dictionary will hold the
+        # number of songs and artists and total play time.
+        self.statistics_dict = {}
 
-	# This dictionary will contain the elements 'date', 'before',
-	# 'after'. The values are a unix timestamp and the number of
-	# songs played before and after this time respectively.
-	self.time_partition_dict = {}
+        # This dictionary will contain the elements 'date', 'before',
+        # 'after'. The values are a unix timestamp and the number of
+        # songs played before and after this time respectively.
+        self.time_partition_dict = {}
 
-	# This list will contain a list of sqlite3 rows
-	# of the songs played in a certain time period.
-	self.songs_played = []
+        # This list will contain a list of sqlite3 rows
+        # of the songs played in a certain time period.
+        self.songs_played = []
 
-	# This will contain a tuple of strings representing dates.
-	self.date = None
+        # This will contain a tuple of strings representing dates.
+        self.date = None
 
         # Set up a dbus interface for the player object
         try:
@@ -55,39 +56,39 @@ class ClementineDb():
             print "WARNING: Could not set up dbus interface."
 
     def __enter__(self):
-	""" This function returns the object.
-	"""
-	#print 'ClementineDb::__enter__'
-	return self
+        """ This function returns the object.
+        """
+        #print 'ClementineDb::__enter__'
+        return self
 
     def __exit__(self,exception_type, exception_val, trace):
-	""" Closes the database connection.
-	"""
-	#print 'ClementineDb::__exit__'
-	# Close the connection if it was created.
-	if self.connection:
-	    self.connection.close()
+        """ Closes the database connection.
+        """
+        #print 'ClementineDb::__exit__'
+        # Close the connection if it was created.
+        if self.connection:
+            self.connection.close()
 
 
     def get_statistics(self):
-	"""This function queries the database for the number of songs,
-	number of albums, total play time and last played song.
-	"""
-	cur = self.connection.cursor()
+        """This function queries the database for the number of songs,
+        number of albums, total play time and last played song.
+        """
+        cur = self.connection.cursor()
 
-	# Get the number of (available) songs.
-	cur.execute("SELECT COUNT(*) FROM songs WHERE unavailable=0")
-	self.statistics_dict['number_of_songs'] = cur.fetchone()[0]
+        # Get the number of (available) songs.
+        cur.execute("SELECT COUNT(*) FROM songs WHERE unavailable=0")
+        self.statistics_dict['number_of_songs'] = cur.fetchone()[0]
 
-	# Get the number of albums.
-	cur.execute("SELECT COUNT(DISTINCT album) FROM songs "
-		    "WHERE unavailable=0")
-	self.statistics_dict['number_of_albums'] = cur.fetchone()[0]
+        # Get the number of albums.
+        cur.execute("SELECT COUNT(DISTINCT album) FROM songs "
+                    "WHERE unavailable=0")
+        self.statistics_dict['number_of_albums'] = cur.fetchone()[0]
 
-	# Get the number of artists.
-	cur.execute("SELECT COUNT(DISTINCT artist) FROM songs "
-		    "WHERE unavailable=0")
-	self.statistics_dict['number_of_artists'] = cur.fetchone()[0]
+        # Get the number of artists.
+        cur.execute("SELECT COUNT(DISTINCT artist) FROM songs "
+                    "WHERE unavailable=0")
+        self.statistics_dict['number_of_artists'] = cur.fetchone()[0]
 
         # Get the number of genres.
         cur.execute("SELECT Count(DISTINCT genre) FROM songs "
@@ -95,133 +96,133 @@ class ClementineDb():
         self.statistics_dict['number_of_genres'] = cur.fetchone()[0]
 
         # Get the total play time.
-	cur.execute("SELECT Total(length) FROM songs WHERE unavailable=0")
-	total_time_in_nanoseconds = cur.fetchone()[0]
-	# Convert the result to microseconds and turn it into a
-	# human-readable string.
-	total_time_in_microseconds = total_time_in_nanoseconds / 1000
-	self.statistics_dict['total_play_time_str'] = \
-		str(datetime.timedelta(
-		microseconds=total_time_in_microseconds))
+        cur.execute("SELECT Total(length) FROM songs WHERE unavailable=0")
+        total_time_in_nanoseconds = cur.fetchone()[0]
+        # Convert the result to microseconds and turn it into a
+        # human-readable string.
+        total_time_in_microseconds = total_time_in_nanoseconds / 1000
+        self.statistics_dict['total_play_time_str'] = \
+                str(datetime.timedelta(
+                microseconds=total_time_in_microseconds))
 
-	# Get the title, artist and timestamp of the last played song.
-	cur.execute("SELECT artist, title, lastplayed "
-		    "FROM songs "
-		    " WHERE unavailable = 0 "
-		    "ORDER BY lastplayed DESC "
-		    "LIMIT 1")
-	last_played_song = cur.fetchone()
-	self.statistics_dict['last_played_title'] = \
-	    last_played_song['title']
-	self.statistics_dict['last_played_artist'] = \
-	    last_played_song['artist']
-	self.statistics_dict['last_played_time'] = \
-	    datetime.datetime.fromtimestamp(
-		last_played_song['lastplayed']).strftime("%Y-%m-%d %H:%M")
+        # Get the title, artist and timestamp of the last played song.
+        cur.execute("SELECT artist, title, lastplayed "
+                    "FROM songs "
+                    " WHERE unavailable = 0 "
+                    "ORDER BY lastplayed DESC "
+                    "LIMIT 1")
+        last_played_song = cur.fetchone()
+        self.statistics_dict['last_played_title'] = \
+            last_played_song['title']
+        self.statistics_dict['last_played_artist'] = \
+            last_played_song['artist']
+        self.statistics_dict['last_played_time'] = \
+            datetime.datetime.fromtimestamp(
+                last_played_song['lastplayed']).strftime("%Y-%m-%d %H:%M")
 
-	# Debug row. It prints the dictionary.
+        # Debug row. It prints the dictionary.
         # print self.statistics_dict
 
     def print_statistics(self):
-	""" This function prints the statistics gathered to the shell.
-	"""
-	print ("%d songs on %d albums by %d different artists "
+        """ This function prints the statistics gathered to the shell.
+        """
+        print ("%d songs on %d albums by %d different artists "
             "spread on %d genres." %
-	    (self.statistics_dict['number_of_songs'],
-	     self.statistics_dict['number_of_albums'],
-	     self.statistics_dict['number_of_artists'],
+            (self.statistics_dict['number_of_songs'],
+             self.statistics_dict['number_of_albums'],
+             self.statistics_dict['number_of_artists'],
              self.statistics_dict['number_of_genres']
-	    ))
-	print "The total play time of the collection is %s." % \
-	    (self.statistics_dict['total_play_time_str'])
-	print "The last song played was %s by %s at %s." % \
-	    (self.statistics_dict['last_played_title'],
-	     self.statistics_dict['last_played_artist'],
-	     self.statistics_dict['last_played_time'])
+            ))
+        print "The total play time of the collection is %s." % \
+            (self.statistics_dict['total_play_time_str'])
+        print "The last song played was %s by %s at %s." % \
+            (self.statistics_dict['last_played_title'],
+             self.statistics_dict['last_played_artist'],
+             self.statistics_dict['last_played_time'])
 
     def partition_songs(self, split_date):
-	"""Splits the number of songs played into two partions: The
-	variable 'before' holds the number of songs played before
-	the given time. The variable 'after' holds the number of
-	songs played after the given time.
+        """Splits the number of songs played into two partions: The
+        variable 'before' holds the number of songs played before
+        the given time. The variable 'after' holds the number of
+        songs played after the given time.
 
-	Parameter: split_date (integer) is a unix timestamp.
+        Parameter: split_date (integer) is a unix timestamp.
 
-	"""
-	cur = self.connection.cursor()
-	if split_date != None:
-	    # Put the parameter into a 1-tuple so that it can be used in
-	    # the sql query.
-	    when = (split_date,)
+        """
+        cur = self.connection.cursor()
+        if split_date != None:
+            # Put the parameter into a 1-tuple so that it can be used in
+            # the sql query.
+            when = (split_date,)
 
-	    # Get the number of songs played before the date.
-	    cur.execute('SELECT Count(*) FROM songs '
-			'WHERE lastplayed < ? AND unavailable=0',
-			when
-		    )
-	    number_of_songs_played_before_date = cur.fetchone()[0]
+            # Get the number of songs played before the date.
+            cur.execute('SELECT Count(*) FROM songs '
+                        'WHERE lastplayed < ? AND unavailable=0',
+                        when
+                    )
+            number_of_songs_played_before_date = cur.fetchone()[0]
 
-	    # Get the number of songs played after the date.
-	    cur.execute('SELECT Count(*) FROM songs '
-			'WHERE lastplayed >= ? AND unavailable=0',
-			when
-		    )
-	    number_of_songs_played_after_date = cur.fetchone()[0]
+            # Get the number of songs played after the date.
+            cur.execute('SELECT Count(*) FROM songs '
+                        'WHERE lastplayed >= ? AND unavailable=0',
+                        when
+                    )
+            number_of_songs_played_after_date = cur.fetchone()[0]
 
-	    # Populate self.time_partition_dict with these values.
-	    self.time_partition_dict['date'] = split_date
-	    self.time_partition_dict['before'] = (
-		number_of_songs_played_before_date
-	    )
-	    self.time_partition_dict['after'] = (
-		number_of_songs_played_after_date
-	    )
+            # Populate self.time_partition_dict with these values.
+            self.time_partition_dict['date'] = split_date
+            self.time_partition_dict['before'] = (
+                number_of_songs_played_before_date
+            )
+            self.time_partition_dict['after'] = (
+                number_of_songs_played_after_date
+            )
 
     def print_partitions(self):
-	"""
-	Print the number of songs played before and after the
-	date 'date' in self.time_partition_dict.
+        """
+        Print the number of songs played before and after the
+        date 'date' in self.time_partition_dict.
 
-	"""
-	# Do nothing if time_partition_dict is empty.
-	if not self.time_partition_dict:
-	    return
+        """
+        # Do nothing if time_partition_dict is empty.
+        if not self.time_partition_dict:
+            return
 
-	split_date_str = datetime.datetime.fromtimestamp(
-	    self.time_partition_dict['date']).strftime(
-		"%Y-%m-%d %H:%M")
-	print "There are %d songs played before %s." % \
-	    (self.time_partition_dict['before'], split_date_str)
-	print "There are %d songs played after %s." % \
-	    (self.time_partition_dict['after'], split_date_str)
+        split_date_str = datetime.datetime.fromtimestamp(
+            self.time_partition_dict['date']).strftime(
+                "%Y-%m-%d %H:%M")
+        print "There are %d songs played before %s." % \
+            (self.time_partition_dict['before'], split_date_str)
+        print "There are %d songs played after %s." % \
+            (self.time_partition_dict['after'], split_date_str)
 
     def get_songs_played_on_interval(self, when):
-	"""Queries for a list of all songs that were played on the
-	date interval given in the tuple when in a unix timestamp
-	format. The list is stored in the list self.song_list.
+        """Queries for a list of all songs that were played on the
+        date interval given in the tuple when in a unix timestamp
+        format. The list is stored in the list self.song_list.
 
-	"""
+        """
 
-	# Query the database.
-	cur = self.connection.cursor()
-	cur.execute(
-	    "SELECT artist, title, "
-	    "datetime(lastplayed, 'unixepoch', 'localtime') "
-	    "AS 'last played', "
+        # Query the database.
+        cur = self.connection.cursor()
+        cur.execute(
+            "SELECT artist, title, "
+            "datetime(lastplayed, 'unixepoch', 'localtime') "
+            "AS 'last played', "
             "length "
-	    "FROM songs "
-	    "WHERE lastplayed BETWEEN ? "
-	    "AND ? "
-	    "AND unavailable = 0 "
-	    "ORDER BY lastplayed",
-	    when
-	)
-	self.songs_played = cur.fetchall()
+            "FROM songs "
+            "WHERE lastplayed BETWEEN ? "
+            "AND ? "
+            "AND unavailable = 0 "
+            "ORDER BY lastplayed",
+            when
+        )
+        self.songs_played = cur.fetchall()
 
-	# Store the dates as a string.
-	self.date = (
-	    datetime.datetime.fromtimestamp(
-		when[0]).strftime("%Y-%m-%d %H:%M"),
+        # Store the dates as a string.
+        self.date = (
+            datetime.datetime.fromtimestamp(
+                when[0]).strftime("%Y-%m-%d %H:%M"),
             datetime.datetime.fromtimestamp(
                 when[1]).strftime("%Y-%m-%d %H:%M")
         )
