@@ -1,5 +1,5 @@
 # clementine-stats
-This is a collection of scripts to get statistics from your Clementine database.
+This is a collection of scripts to get statistics from your [Clementine](https://clementine-player.org/) database.
 
 ## Requirements
 * python3
