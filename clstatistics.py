@@ -52,7 +52,7 @@ class ClementineDb():
                 dbus_interface='org.freedesktop.MediaPlayer'
             )
         except dbus.DBusException:
-            print "WARNING: Could not set up dbus interface."
+            print("WARNING: Could not set up dbus interface.")
 
     def __enter__(self):
         """ This function returns the object.
@@ -119,19 +119,19 @@ class ClementineDb():
     def print_statistics(self):
         """ This function prints the statistics gathered to the shell.
         """
-        print ("%d songs on %d albums by %d different artists "
+        print(("%d songs on %d albums by %d different artists "
             "spread on %d genres." %
             (self.statistics_dict['number_of_songs'],
              self.statistics_dict['number_of_albums'],
              self.statistics_dict['number_of_artists'],
              self.statistics_dict['number_of_genres']
-            ))
-        print "The total play time of the collection is %s." % \
-            (self.statistics_dict['total_play_time_str'])
-        print "The last song played was %s by %s at %s." % \
+            )))
+        print("The total play time of the collection is %s." % \
+            (self.statistics_dict['total_play_time_str']))
+        print("The last song played was %s by %s at %s." % \
             (self.statistics_dict['last_played_title'],
              self.statistics_dict['last_played_artist'],
-             self.statistics_dict['last_played_time'])
+             self.statistics_dict['last_played_time']))
 
     def partition_songs(self, split_date):
         """Splits the number of songs played into two partions: The
@@ -184,10 +184,10 @@ class ClementineDb():
         split_date_str = datetime.datetime.fromtimestamp(
             self.time_partition_dict['date']).strftime(
                 "%Y-%m-%d %H:%M")
-        print "There are %d songs played before %s." % \
-            (self.time_partition_dict['before'], split_date_str)
-        print "There are %d songs played after %s." % \
-            (self.time_partition_dict['after'], split_date_str)
+        print("There are %d songs played before %s." % \
+            (self.time_partition_dict['before'], split_date_str))
+        print("There are %d songs played after %s." % \
+            (self.time_partition_dict['after'], split_date_str))
 
     def get_songs_played_on_interval(self, when):
         """Queries for a list of all songs that were played on the
@@ -239,30 +239,30 @@ class ClementineDb():
         """ Prints the list of songs in self.songs_played."""
 
         # Print headers
-        print
-        print "{:<30} {:<30} {:<20}".format(
+        print()
+        print("{:<30} {:<30} {:<20}".format(
             "artist", "title", "last played"
-        )
-        print "{0:-<30} {0:-<30} {0:-<20}".format("")
+        ))
+        print("{0:-<30} {0:-<30} {0:-<20}".format(""))
         # Print list
         for row in self.songs_played:
-            print u"{:<30} {:<30} {:<20}".format(
+            print("{:<30} {:<30} {:<20}".format(
                 row["artist"][:30], row["title"][:30], row["last played"]
-            )
+            ))
         # Print total number of songs.
         number_of_songs = len(self.songs_played)
         play_time_str = self.compute_total_play_time_of_songs_played()
-        print
-        print "{} songs played between {} and {}."\
-            .format(number_of_songs, self.date[0], self.date[1])
-        print "The total play time is {}.".format(play_time_str)
+        print()
+        print("{} songs played between {} and {}."\
+            .format(number_of_songs, self.date[0], self.date[1]))
+        print("The total play time is {}.".format(play_time_str))
 
 
     def print_dbus(self):
         """ This function is used to test dbus for now. """
         metadata = self.player_iface.GetMetadata()
-        for key, value in metadata.iteritems():
-            print "{}: {}".format(key,value)
+        for key, value in metadata.items():
+            print("{}: {}".format(key,value))
 
 def get_timestamp(args):
     '''Reads the argument list and converts the first argument that can be
