@@ -7,7 +7,6 @@
 import argparse
 import datetime
 import dateutil.parser
-import dbus
 import os
 import sqlite3
 
@@ -42,17 +41,6 @@ class ClementineDb():
 
         # This will contain a tuple of strings representing dates.
         self.date = None
-
-        # Set up a dbus interface for the player object
-        try:
-            session_bus = dbus.SessionBus()
-            player = session_bus.get_object('org.mpris.clementine', '/Player')
-            self.player_iface = dbus.Interface(
-                player,
-                dbus_interface='org.freedesktop.MediaPlayer'
-            )
-        except dbus.DBusException:
-            print("WARNING: Could not set up dbus interface.")
 
     def __enter__(self):
         """ This function returns the object.
@@ -257,13 +245,6 @@ class ClementineDb():
             .format(number_of_songs, self.date[0], self.date[1]))
         print("The total play time is {}.".format(play_time_str))
 
-
-    def print_dbus(self):
-        """ This function is used to test dbus for now. """
-        metadata = self.player_iface.GetMetadata()
-        for key, value in metadata.items():
-            print("{}: {}".format(key,value))
-
 def get_timestamp(args):
     '''Reads the argument list and converts the first argument that can be
     interperted as a date or time into the unix timestamp format. This
@@ -322,11 +303,6 @@ def main():
         metavar = 'DATE',
         action = 'store',
     )
-    parser.add_argument(
-        '--test',
-        action = 'store_true',
-        help = 'Run internal testing code.'
-    )
 
     args = parser.parse_args()
 
@@ -370,12 +346,6 @@ def main():
             if date != None: # Do nothing on an invalid date.
                 conn.partition_songs(date)
                 conn.print_partitions()
-
-        # Run tests if the appropriate command line option is given.
-        if args.test:
-            # conn.print_dbus()
-
-            conn.compute_total_play_time_of_songs_played()
 
 # Run the program. (Use C-u C-c C-c to run main from within emacs.)
 if __name__ == '__main__':
