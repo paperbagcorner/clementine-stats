@@ -36,7 +36,9 @@ def GetDataFromDb(filename):
                     "Count(*) as num_songs, "
                     "Sum(length) / 1000000000 as length_secs "  # Nanoseconds
                                                                 # in db.
-                    "FROM songs WHERE unavailable = 0 "
+                    "FROM songs "
+                    "WHERE unavailable = 0 "
+                    "AND playcount > 0 "
                     "GROUP BY strftime('%Y-%m', lastplayed, 'unixepoch') "
                     "ORDER BY lastplayed")
 
