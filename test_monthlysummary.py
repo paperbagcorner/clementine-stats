@@ -1,4 +1,5 @@
 import unittest
+from datetime import datetime
 
 import monthlysummary as ms
 
@@ -31,3 +32,7 @@ class TestBuildResultList(unittest.TestCase):
 
     def test_result_should_be_at_least_as_long_as_stats(self):
         self.assertTrue(len(self.result) >= len(self.stats))
+
+    def test_last_result_row_is_current_month(self):
+        current_month = datetime.strftime(datetime.today(), '%Y-%m')
+        self.assertEqual(self.result[-1]['month'], current_month)
