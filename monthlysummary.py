@@ -66,10 +66,10 @@ def BuildResultList(stats):
     today = datetime.today()
     month_list = []
     i = 0
-    while month <= today and i < len(stats):
+    while month <= today:
         row = {}
         month_str = datetime.strftime(month, '%Y-%m')
-        if stats[i]['month'] == month_str:
+        if i < len(stats) and stats[i]['month'] == month_str:
             row = dict(stats[i]) # Since stats[i] is a sqlrow.
             i += 1
         else:
