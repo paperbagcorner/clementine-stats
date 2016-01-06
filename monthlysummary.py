@@ -64,7 +64,7 @@ def BuildResultList(stats):
     today = datetime.today()
     month_list = []
     i = 0
-    while month <= today:
+    while month <= today and i < len(stats):
         row = {}
         month_str = datetime.strftime(month, '%Y-%m')
         if stats[i]['month'] == month_str:
