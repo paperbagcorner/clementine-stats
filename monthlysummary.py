@@ -25,7 +25,7 @@ def GetDataFromDb(filename):
       A list of sqlrows where the elements can be referenced by name.
     '''
     # Create the database connection
-    conn = sqlite3.connect(DB_FILE)
+    conn = sqlite3.connect(filename)
     conn.row_factory = sqlite3.Row
 
     # Get the data.
